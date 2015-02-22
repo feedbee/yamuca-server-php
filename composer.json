@@ -1,0 +1,21 @@
+{
+    "name": "feedbee/yamuca-server",
+    "homepage": "https://github.com/feedbee/yamuca-server",
+    "license": "BSD (3-Clause) License",
+    "authors": [
+        {
+            "name": "Valera Leontyev",
+            "email": "feedbee@gmail.com"
+        }
+    ],
+
+    "autoload": {
+        "psr-4": {
+            "Feedbee\\Yamuca\\": "src/Yamuca/"
+        }
+    },
+    "require": {
+        "php": ">=5.4.0",
+        "cboden/ratchet": "0.3.*"
+    }
+}

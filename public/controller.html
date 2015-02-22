@@ -1,0 +1,49 @@
+<!DOCTYPE html>
+<html>
+<head lang="en">
+    <meta charset="UTF-8">
+    <title>Yamuca Remote Controller</title>
+    <style type="text/css">
+        #main {
+            display: none;
+        }
+        .problem {
+            color: darkred;
+            font-size: 150%;
+            text-align: center;
+        }
+        #problem {
+            display: none;
+        }
+        .panel {
+            padding: 5px;
+        }
+    </style>
+</head>
+<body>
+    <noscript class="problem">You have JavaScript disabled. This page will not work without JavaScript.</noscript>
+    <div id="problem" class="problem"></div>
+    <div id="main">
+        <div class="panel">
+            <span data-disable-if-connected="1">
+                <input id="server_input" type="text" placeholder="Server (ws|wss://host:port/uri)" title="(ws|wss://host:port/uri)" />
+                <input id="key_input" type="text" placeholder="Security key" />
+            </span>
+            <button id="connect_btn">Connect</button>
+        </div>
+        <div class="panel" data-enable-if-connected="1">
+            <button id="previous_btn" disabled>← Prev</button>
+            <button id="play-pause_btn" disabled>Play/Pause</button>
+            <button id="next_btn" disabled>Next →</button>
+        </div>
+    </div>
+    <script type="text/javascript">
+        var proto = '';
+        if (window.location.protocol == 'file:') {
+            proto = "http:";
+        }
+        document.write('<script src="' + proto + '//code.jquery.com/jquery-1.11.2.min.js" src-protocol-fix="1"></' + 'script>');
+    </script>
+    <script src="controller.js"></script>
+</body>
+</html>
