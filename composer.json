@@ -1,5 +1,6 @@
 {
     "name": "feedbee/yamuca-server",
+    "version": "1.1.0",
     "homepage": "https://github.com/feedbee/yamuca-server",
     "license": "BSD (3-Clause) License",
     "authors": [

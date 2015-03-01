@@ -42,6 +42,9 @@ Application-level commands are not defined in terms of server-related communicat
 - `togglePlay`
 - `next`
 - `previous`
+- `volumeUp`
+- `volumeDown`
+- `mute`
 
 Author
 ------

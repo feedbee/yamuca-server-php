@@ -12,12 +12,15 @@
     }
 
 
-    var $connectBtn = $('#connect_btn');
-    var $playPauseBtn = $('#play-pause_btn');
-    var $nextBtn = $('#next_btn');
-    var $previousBtn = $('#previous_btn');
-    var $controlButtons = $('[data-enable-if-connected] button');
-    var $controlInputs = $('[data-disable-if-connected] input');
+    var $connectBtn = $('#connect_btn'),
+        $playPauseBtn = $('#play-pause_btn'),
+        $nextBtn = $('#next_btn'),
+        $previousBtn = $('#previous_btn'),
+        $volumeUpBtn = $('#volume-up_btn'),
+        $volumeDownBtn = $('#volume-down_btn'),
+        $muteBtn = $('#mute_btn'),
+        $controlButtons = $('[data-enable-if-connected] button'),
+        $controlInputs = $('[data-disable-if-connected] input');
 
     var $keyInput = $('#key_input');
     var $serverInput = $('#server_input');
@@ -87,6 +90,18 @@
 
     $previousBtn.click(function () {
         sendCommand('previous');
+    });
+
+    $volumeUpBtn.click(function () {
+        sendCommand('volumeUp');
+    });
+
+    $volumeDownBtn.click(function () {
+        sendCommand('volumeDown');
+    });
+
+    $muteBtn.click(function () {
+        sendCommand('mute');
     });
 
     $('#main').show();
