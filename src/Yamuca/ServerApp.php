@@ -27,12 +27,14 @@ class ServerApp implements MessageComponentInterface, LoggerAwareInterface
     private $keys = [];
 
     public function onOpen(ConnectionInterface $connection) {
-        $this->logger->debug('onOpen');
+        /** @noinspection PhpUndefinedFieldInspection */
+        $this->logger->debug('New connection from ' . $connection->remoteAddress);
         $this->addConnection($connection);
     }
 
     public function onMessage(ConnectionInterface $senderConnection, $msg) {
-        $this->logger->debug("onMessage: $msg");
+        /** @noinspection PhpUndefinedFieldInspection */
+        $this->logger->debug("Message from {$senderConnection->remoteAddress}: $msg");
 
         if (strlen($msg) > 4092) {
             $this->logger->debug('Protocol error: message is too long (' . strlen($msg) . ' bytes)');
@@ -67,16 +69,16 @@ class ServerApp implements MessageComponentInterface, LoggerAwareInterface
         } else if (isset($data['command'])) {
             $this->logger->debug('Command message detected');
 
-            $index = $this->getConnectionIndex($senderConnection);
-            if (is_null($index)) {
+            $senderIndex = $this->getConnectionIndex($senderConnection);
+            if (is_null($senderIndex)) {
                 $this->logger->debug('Protocol error: can\'t find connection index');
                 $senderConnection->send(json_encode(array('error' => 'Internal server error')));
                 return;
             }
-            $senderKey = $this->keys[$index];
+            $senderKey = $this->keys[$senderIndex];
 
             foreach ($this->keys as $index => $key) {
-                if ($key == $senderKey) {
+                if ($senderIndex != $index && $key == $senderKey) {
                     $this->logger->debug("Replicate message to connection #$index");
                     $this->connections[$index]->send($msg);
                 }
@@ -88,12 +90,14 @@ class ServerApp implements MessageComponentInterface, LoggerAwareInterface
     }
 
     public function onClose(ConnectionInterface $connection) {
-        $this->logger->debug("onClose");
+        /** @noinspection PhpUndefinedFieldInspection */
+        $this->logger->debug('Connection closed from ' . $connection->remoteAddress);
         $this->unsetConnection($connection);
     }
 
     public function onError(ConnectionInterface $connection, \Exception $e) {
-        $this->logger->debug("onError {$e->getMessage()}, {$e->getTraceAsString()}");
+        /** @noinspection PhpUndefinedFieldInspection */
+        $this->logger->debug("Error from {$connection->remoteAddress}: {$e->getMessage()}, {$e->getTraceAsString()}");
         $this->unsetConnection($connection);
     }
 
