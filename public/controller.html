@@ -1,47 +1,94 @@
 <!DOCTYPE html>
 <html>
-<head lang="en">
-    <meta charset="UTF-8">
+<head class="no-js" lang="en">
+    <meta charset="utf-8">
     <title>Yamuca Remote Controller</title>
+
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <link rel="stylesheet" href="foundation-5.5.1.custom/css/foundation.css" />
+
     <style type="text/css">
         #main {
             display: none;
         }
-        .problem {
-            color: darkred;
-            font-size: 150%;
-            text-align: center;
+        .full-width {
+            width: 100%;
         }
-        #problem {
-            display: none;
+        .copyright {
+            font-size: 70%;
         }
-        .panel {
-            padding: 5px;
+        .copyright, .copyright a {
+            color: gray;
+        }
+        .copyright a {
+            text-decoration: underline;
         }
     </style>
 </head>
 <body>
-    <noscript class="problem">You have JavaScript disabled. This page will not work without JavaScript.</noscript>
-    <div id="problem" class="problem"></div>
-    <div id="main">
-        <div class="panel">
-            <span data-disable-if-connected="1">
-                <input id="server_input" type="text" placeholder="Server (ws|wss://host:port/uri)" title="(ws|wss://host:port/uri)" />
-                <input id="key_input" type="text" placeholder="Security key" />
-            </span>
-            <button id="connect_btn">Connect</button>
-        </div>
-        <div class="panel" data-enable-if-connected="1">
-            <button id="previous_btn" disabled>← Prev</button>
-            <button id="play-pause_btn" disabled>Play/Pause</button>
-            <button id="next_btn" disabled>Next →</button>
-        </div>
-        <div class="panel" data-enable-if-connected="1">
-            <button id="volume-down_btn" disabled>Volume –</button>
-            <button id="mute_btn" disabled>Mute ×</button>
-            <button id="volume-up_btn" disabled>Volume +</button>
+    <div class="row">
+        <div class="large-12 columns">
+            <h1>Yamuca client</h1>
+            <p>
+                <a href="https://github.com/feedbee/yamuca-server-php">About</a> this software.
+                <span data-tooltip aria-haspopup="true" class="has-tip"
+                      title="Enter server address and security key, connect to server.
+                      Connect Chrome extension to the same server. Use control buttons
+                      to send commands to extension. More information is available by
+                      the link above.">Help</span>
+            </p>
         </div>
     </div>
+    <div id="messages" class="row">
+        <noscript class="alert-box alert radius">You have JavaScript disabled. This page will not work without JavaScript.</noscript>
+
+        <script id="alert-template" type="html/template">
+            <div data-alert class="alert-box alert radius">
+                <div class="text"></div>
+                <a href="#" class="close">&times;</a>
+            </div>
+        </script>
+    </div>
+    <div id="main">
+        <div class="row panel">
+            <div data-disable-if-connected="1">
+                <input id="server_input" type="text" placeholder="Server Address (ws|wss://host:port/uri)"
+                       title="Format: ws[s]://host[:port]/[uri]" data-tooltip aria-haspopup="true" />
+                <input id="key_input" type="text" placeholder="Security Key" data-tooltip aria-haspopup="true"
+                       title="Something rather long and random to exclude intersection with other users" />
+            </div>
+            <button id="connect_btn" class="radius">Connect</button>
+        </div>
+        <div class="row" data-enable-if-connected="1">
+            <div class="small-6 medium-2 large-2 large-push-2 medium-push-2 columns text-center">
+                <button id="play-pause_btn" class="full-width radius" disabled>Play/Pause</button>
+            </div>
+            <div class="small-3 medium-2 large-2 large-pull-2 medium-pull-2 columns text-left">
+                <button id="previous_btn" class="full-width radius" disabled>← Prev</button>
+            </div>
+            <div class="small-3 medium-2 large-2 columns text-right">
+                <button id="next_btn" class="full-width radius" disabled>Next →</button>
+            </div>
+        </div>
+        <div class="row" data-enable-if-connected="1">
+            <div class="small-6 medium-2 large-2 large-push-2 medium-push-2 columns text-center">
+                <button id="mute_btn" class="full-width radius" disabled>Mute ×</button>
+            </div>
+            <div class="small-3 medium-2 large-2 large-pull-2 medium-pull-2 columns text-left">
+                <button id="volume-down_btn" class="full-width radius" disabled>Volume –</button>
+            </div>
+            <div class="small-3 medium-2 large-2 columns text-right">
+                <button id="volume-up_btn" class="full-width radius" disabled>Volume +</button>
+            </div>
+        </div>
+    </div>
+    <div class="row">
+        <div class="small-6 medium-5 large-4 columns copyright">
+            &copy; 2015, <a href="https://github.com/feedbee/yamuca-server-php">Yamuca</a> by Valera Leontyev.<br />
+            Built with <a href="http://foundation.zurb.com/">ZURB Foundation</a> framework
+        </div>
+    </div>
+
     <script type="text/javascript">
         var proto = '';
         if (window.location.protocol == 'file:') {
@@ -49,6 +96,10 @@
         }
         document.write('<script src="' + proto + '//code.jquery.com/jquery-1.11.2.min.js" src-protocol-fix="1"></' + 'script>');
     </script>
+    <script src="foundation-5.5.1.custom/js/vendor/modernizr.js"></script>
+    <script src="foundation-5.5.1.custom/js/foundation.min.js"></script>
+    <script src="foundation-5.5.1.custom/js/foundation/foundation.alert.js"></script>
+    <script>$(document).foundation();</script>
     <script src="controller.js"></script>
 </body>
 </html>
