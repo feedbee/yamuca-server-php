@@ -48,6 +48,9 @@
     };
 
     var connect = function () {
+        var interval,
+            lastActivity;
+
         try {
             ws = new WebSocket($serverInput.val());
         } catch (e) {
@@ -56,28 +59,45 @@
             return;
         }
         ws.onopen = function () {
+            console.log('WS connected');
             $connectBtn.text('Connected. Disconnect');
             $controlButtons.attr('disabled', false);
             $controlInputs.attr('disabled', true);
             var data = {key: $keyInput.val()};
             ws.send(JSON.stringify(data));
+            lastActivity = Date.now();
+
+            interval = setInterval(function () {
+                if (lastActivity < Date.now() - 60 * 1000 * 2) { // 2 minutes
+                    console.log('Close connection due to inactivity');
+                    ws.close();
+                }
+            }, 2000);
         };
-        ws.close = function () {
+        ws.onclose = function (e) {
+            console.log('WS connection closed', e);
             $connectBtn.text('Connect');
             $controlButtons.attr('disabled', true);
             $controlInputs.attr('disabled', false);
+            clearInterval(interval);
         };
         ws.onerror = function (e) {
             showAlert("Connection closed with error");
-            console.log(e);
+            console.log('WS error occurred', e);
             $connectBtn.text('Connect');
             $controlButtons.attr('disabled', true);
             $controlInputs.attr('disabled', false);
         };
         ws.onmessage = function (e) {
+            lastActivity = Date.now();
             var message = e.data;
-            console.log(message);
-            // nothing to do currently
+            console.log('Message received', message);
+
+            var parsedMessage = JSON.parse(message);
+            if (parsedMessage.ping) {
+                ws.send(JSON.stringify({ping: "pong"}));
+                console.log('Ping received, pong sent');
+            }
         };
     };
 
