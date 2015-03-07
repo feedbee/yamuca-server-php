@@ -1,14 +1,19 @@
 (function ($) {
 
+    var showAlert = function (text) {
+        var block = $($('#alert-template').html());
+        $('#messages').append(block);
+        $('.text', block).text(text);
+        block.parent().foundation('alert', 'reflow');
+    };
+
     if(typeof(WebSocket) != "function") {
-        $('#problem').text("Your browser doesn't support HTML5 Web Sockets. " +
-            "This application will not work without it")
-            .show();
+        showAlert("Your browser doesn't support HTML5 Web Sockets. " +
+            "This application will not work without it");
     }
     if(typeof(JSON) != "object" || typeof(JSON.stringify) != "function") {
-        $('#problem').text("Your browser doesn't support JSON.stringify. " +
-        "This application will not work without it")
-            .show();
+        showAlert("Your browser doesn't support JSON.stringify. " +
+            "This application will not work without it");
     }
 
 
@@ -43,7 +48,13 @@
     };
 
     var connect = function () {
-        ws = new WebSocket($serverInput.val());
+        try {
+            ws = new WebSocket($serverInput.val());
+        } catch (e) {
+            showAlert(e.message);
+            console.log(e.message);
+            return;
+        }
         ws.onopen = function () {
             $connectBtn.text('Connected. Disconnect');
             $controlButtons.attr('disabled', false);
@@ -56,7 +67,9 @@
             $controlButtons.attr('disabled', true);
             $controlInputs.attr('disabled', false);
         };
-        ws.onerror = function () {
+        ws.onerror = function (e) {
+            showAlert("Connection closed with error");
+            console.log(e);
             $connectBtn.text('Connect');
             $controlButtons.attr('disabled', true);
             $controlInputs.attr('disabled', false);
