@@ -42,50 +42,64 @@ class ServerApp implements MessageComponentInterface, LoggerAwareInterface
             return;
         }
 
-        $data = json_decode($msg, true, 2);
-        if (is_null($data)) {
+        $parsedMessage = json_decode($msg, true, 2);
+        if (is_null($parsedMessage)) {
             $this->logger->debug("Protocol error: can't parse message: $msg");
             $senderConnection->send(json_encode(array('error' => 'Can\'t parse your message')));
             return;
         }
 
-        if (isset($data['key'])) {
-            $this->logger->debug('Key message detected');
+        $this->processMessage($senderConnection, $parsedMessage);
+    }
 
-            if (strlen($data['key']) > 1024) {
-                $this->logger->debug('Protocol error: key is too long (' . strlen($data['key']) . "): $msg");
-                $senderConnection->send(json_encode(array('error' => 'Key is too long')));
-                return;
-            }
-            $index = $this->getConnectionIndex($senderConnection);
-            if (is_null($index)) {
-                $this->logger->debug('Protocol error: can\'t find connection index');
-                $senderConnection->send(json_encode(array('error' => 'Internal server error')));
-                return;
-            }
-            $this->keys[$index] = $data['key'];
-            $this->logger->debug("New key was set for connection #$index: {$data['key']}");
-
-        } else if (isset($data['command'])) {
-            $this->logger->debug('Command message detected');
-
-            $senderIndex = $this->getConnectionIndex($senderConnection);
-            if (is_null($senderIndex)) {
-                $this->logger->debug('Protocol error: can\'t find connection index');
-                $senderConnection->send(json_encode(array('error' => 'Internal server error')));
-                return;
-            }
-            $senderKey = $this->keys[$senderIndex];
-
-            foreach ($this->keys as $index => $key) {
-                if ($senderIndex != $index && $key == $senderKey) {
-                    $this->logger->debug("Replicate message to connection #$index");
-                    $this->connections[$index]->send($msg);
-                }
-            }
+    protected function processMessage(ConnectionInterface $senderConnection, array $message)
+    {
+        if (isset($message['key'])) {
+            $this->processKeyMessage($senderConnection, $message);
+        } else if (isset($message['command'])) {
+            $this->processCommandMessage($senderConnection, $message);
         } else {
             $this->logger->debug('Protocol error: unknown message type');
             $senderConnection->send(json_encode(array('error' => 'Unknown message type')));
+        }
+    }
+
+    protected function processKeyMessage(ConnectionInterface $senderConnection, array $message)
+    {
+        $this->logger->debug('Key message detected');
+
+        if (strlen($message['key']) > 1024) {
+            $this->logger->debug('Protocol error: key is too long (' . strlen($message['key']) . "): {$message['key']}");
+            $senderConnection->send(json_encode(array('error' => 'Key is too long')));
+            return;
+        }
+        $index = $this->getConnectionIndex($senderConnection);
+        if (is_null($index)) {
+            $this->logger->debug('Protocol error: can\'t find connection index');
+            $senderConnection->send(json_encode(array('error' => 'Internal server error')));
+            return;
+        }
+        $this->keys[$index] = $message['key'];
+        $this->logger->debug("New key was set for connection #$index: {$message['key']}");
+    }
+
+    protected function processCommandMessage(ConnectionInterface $senderConnection, array $message)
+    {
+        $this->logger->debug('Command message detected');
+
+        $senderIndex = $this->getConnectionIndex($senderConnection);
+        if (is_null($senderIndex)) {
+            $this->logger->debug('Protocol error: can\'t find connection index');
+            $senderConnection->send(json_encode(array('error' => 'Internal server error')));
+            return;
+        }
+        $senderKey = $this->keys[$senderIndex];
+
+        foreach ($this->keys as $index => $key) {
+            if ($senderIndex != $index && $key == $senderKey) {
+                $this->logger->debug("Replicate message to connection #$index");
+                $this->connections[$index]->send(json_encode($message, JSON_UNESCAPED_UNICODE));
+            }
         }
     }
 
