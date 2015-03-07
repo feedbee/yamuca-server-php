@@ -44,6 +44,7 @@ $server = IoServer::factory(
     $config['listen']['port'],
     $config['listen']['interface']
 );
+$serverApp->run($server->loop);
 
 $logger->info("Run server: {$config['listen']['interface']}:{$config['listen']['port']}");
 $server->run();

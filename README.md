@@ -26,6 +26,7 @@ Message types:
 
 - `{"key": "xxx"}`: setup a key `xxx` for current connection.
 - `{"command": "zzz", ...}`: send `zzz` application-level command to all consumers related to the key client was set earlier.
+- `{"ping": "ping|pong"}`: ping request from server to client (`ping`), and response from client to server (`pong`).
 
 `command` message accepted after any `key` message only. Messages can include payload additional key-values. `key` messages can be sent multiply times, every next `key` will override previously set. Maximal key length is limited to 1024 bytes. Overall message size is limited to 4092 bytes.
 
@@ -36,6 +37,8 @@ If error occurred during message processing server will send response message: `
 - Can't parse your message
 - Unknown message type
 - Internal server error
+
+Server send `ping` message to all connected clients every minute. After `ping` have been received, client must immediately send `pong` message back to server. Server disconnects all clients that haven't been active (haven't sent any messages) within 2 minutes. Clients must disconnect from server if any messages haven't been received within 2 minutes.
 
 Application-level commands are not defined in terms of server-related communication protocol. In client application, that is embedded to this server, currently implemented commands are:
 
@@ -55,4 +58,4 @@ Send questions to this email. Use [issues](https://github.com/feedbee/yamuca-ser
 Development state
 -----------------
 
-Application is in development state currently.
+Application is in development state currently. Current server version is 0.2.

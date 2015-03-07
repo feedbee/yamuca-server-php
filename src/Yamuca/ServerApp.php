@@ -4,6 +4,7 @@ namespace Feedbee\Yamuca;
 
 use Ratchet\MessageComponentInterface;
 use Ratchet\ConnectionInterface;
+use React\EventLoop\LoopInterface;
 use Psr\Log\LoggerAwareTrait;
 use Psr\Log\LoggerAwareInterface;
 
@@ -26,15 +27,76 @@ class ServerApp implements MessageComponentInterface, LoggerAwareInterface
      */
     private $keys = [];
 
-    public function onOpen(ConnectionInterface $connection) {
+    /**
+     * @var int[]
+     */
+    private $lastActivityTimes = [];
+
+    public function run(LoopInterface $loop)
+    {
+        $loop->addPeriodicTimer(59, function () {
+            if (count($this->connections)) {
+                $this->sendPing();
+                $this->closeInactiveConnection();
+            } else {
+                $this->logger->debug('No connections to ping or close');
+            }
+        });
+    }
+
+    public function sendPing()
+    {
+        $this->logger->debug('Send pings');
+        foreach ($this->connections as $index => $connection) {
+            try
+            {
+                $connection->send(json_encode([
+                    "ping" => "ping"
+                ]));
+            } catch (\Exception $e) {
+                /** @noinspection PhpUndefinedFieldInspection */
+                $this->logger->debug("Ping sending error to {$connection->remoteAddress}: {$e->getMessage()}");
+            }
+        }
+    }
+
+    public function closeInactiveConnection()
+    {
+        $this->logger->debug('Close inactive connection');
+
+        $time = time() - 60 * 2; // activity interval 2 minutes
+        foreach ($this->connections as $connection) {
+            $index = $this->getConnectionIndex($connection);
+            if (is_null($index)) {
+                $this->logger->debug("Can't find connection index");
+                continue;
+            }
+
+            if (!isset($this->lastActivityTimes[$index])) {
+                $this->logger->debug("Connection activity is not set");
+                continue;
+            }
+
+            if ($this->lastActivityTimes[$index] < $time) {
+                $this->logger->debug("Close connection #$index due to inactivity");
+                $connection->close();
+            }
+        }
+    }
+
+    public function onOpen(ConnectionInterface $connection)
+    {
         /** @noinspection PhpUndefinedFieldInspection */
         $this->logger->debug('New connection from ' . $connection->remoteAddress);
         $this->addConnection($connection);
     }
 
-    public function onMessage(ConnectionInterface $senderConnection, $msg) {
+    public function onMessage(ConnectionInterface $senderConnection, $msg)
+    {
         /** @noinspection PhpUndefinedFieldInspection */
         $this->logger->debug("Message from {$senderConnection->remoteAddress}: $msg");
+
+        $this->refresh($senderConnection);
 
         if (strlen($msg) > 4092) {
             $this->logger->debug('Protocol error: message is too long (' . strlen($msg) . ' bytes)');
@@ -58,6 +120,8 @@ class ServerApp implements MessageComponentInterface, LoggerAwareInterface
             $this->processKeyMessage($senderConnection, $message);
         } else if (isset($message['command'])) {
             $this->processCommandMessage($senderConnection, $message);
+        } else if (isset($message['ping'])) {
+            // don't required any action as connection automatically refreshed on every message
         } else {
             $this->logger->debug('Protocol error: unknown message type');
             $senderConnection->send(json_encode(array('error' => 'Unknown message type')));
@@ -103,33 +167,52 @@ class ServerApp implements MessageComponentInterface, LoggerAwareInterface
         }
     }
 
-    public function onClose(ConnectionInterface $connection) {
+    protected function refresh(ConnectionInterface $connection)
+    {
+        $index = $this->getConnectionIndex($connection);
+        if (is_null($index)) {
+            $this->logger->debug('Protocol error: can\'t find connection index');
+            return;
+        }
+
+        $this->logger->debug("Connection #$index refreshed");
+
+        $this->lastActivityTimes[$index] = time();
+    }
+
+    public function onClose(ConnectionInterface $connection)
+    {
         /** @noinspection PhpUndefinedFieldInspection */
         $this->logger->debug('Connection closed from ' . $connection->remoteAddress);
         $this->unsetConnection($connection);
     }
 
-    public function onError(ConnectionInterface $connection, \Exception $e) {
+    public function onError(ConnectionInterface $connection, \Exception $e)
+    {
         /** @noinspection PhpUndefinedFieldInspection */
         $this->logger->debug("Error from {$connection->remoteAddress}: {$e->getMessage()}, {$e->getTraceAsString()}");
         $this->unsetConnection($connection);
     }
 
-    private function addConnection(ConnectionInterface $connection) {
+    private function addConnection(ConnectionInterface $connection)
+    {
         $this->connections[] = $connection;
         $this->keys[] = null;
+        $this->lastActivityTimes[] = time();
 
         end($this->connections);
         $index = key($this->connections);
         $this->logger->info("Connection #$index added, connected: " . count($this->connections) . ' clients');
     }
 
-    private function getConnectionIndex(ConnectionInterface $connection) {
+    private function getConnectionIndex(ConnectionInterface $connection)
+    {
         $key = array_search($connection, $this->connections);
         return $key === false ? null : $key;
     }
 
-    private function unsetConnection(ConnectionInterface $connection) {
+    private function unsetConnection(ConnectionInterface $connection)
+    {
         $index = $this->getConnectionIndex($connection);
         if (!is_null($index)) {
             unset($this->connections[$index]);
